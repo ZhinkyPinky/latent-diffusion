@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "--prompt",
         type=str,
         nargs="?",
-        default="a painting of a virus monster playing guitar",
+        default="100, 0, 100, 0, 100, 0, 100, 0",
         help="the prompt to render"
     )
 
@@ -46,8 +46,9 @@ if __name__ == "__main__":
         type=str,
         nargs="?",
         help="dir to write results to",
-        default="outputs/txt2img-samples"
+        default="outputs/psd-samples"
     )
+
     parser.add_argument(
         "--ddim_steps",
         type=int,
@@ -67,6 +68,7 @@ if __name__ == "__main__":
         default=0.0,
         help="ddim eta (eta=0.0 corresponds to deterministic sampling",
     )
+
     parser.add_argument(
         "--n_iter",
         type=int,
@@ -104,8 +106,14 @@ if __name__ == "__main__":
     opt = parser.parse_args()
 
     config = OmegaConf.load(
-        "configs/latent-diffusion/txt2img-1p4B-eval.yaml")  # TODO: Optionally download from same location as ckpt and chnage this logic
-    model = load_model_from_config(config, "models/ldm/text2img-large/model.ckpt")  # TODO: check path
+        "logs/2023-12-18T09-32-24_psd-ldm-vq-4/configs/2023-12-18T09-32-24-project.yaml")  # TODO: Optionally download from same location as ckpt and chnage this logic
+    model = load_model_from_config(config, "logs/2023-12-18T09-32-24_psd-ldm-vq-4/checkpoints/epoch=000380.ckpt")  # TODO: check path
+
+    #logs/2023-12-15T10-46-32_psd-ldm-vq-4/checkpoints/epoch=000200.ckpt
+    #logs/2023-12-15T14-25-31_psd-ldm-vq-4/checkpoints/epoch=000290.ckpt
+    #logs/2023-12-18T09-32-24_psd-ldm-vq-4/checkpoints/epoch=000380.ckpt
+    #"logs/2023-12-14T11-26-47_psd-ldm-vq-4/checkpoints/epoch=000110.ckpt"
+    # "logs/2023-12-12T15-51-13_psd-ldm-vq-4/checkpoints/epoch=000058.ckpt"
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = model.to(device)
@@ -119,6 +127,18 @@ if __name__ == "__main__":
     outpath = opt.outdir
 
     prompt = opt.prompt
+    prompt = prompt.split(",")
+    prompt = torch.tensor([[[float(value) for value in prompt]]] * opt.n_samples)
+    prompt = prompt[..., None]
+    prompt = rearrange(prompt, 'b h w c -> b c h w')
+    prompt = prompt.to(device)
+
+    uc_prompt = "0,0,0,0,0,0,0,0"
+    uc_prompt = uc_prompt.split(",")
+    uc_prompt = torch.tensor([[[float(value) for value in uc_prompt]]] * opt.n_samples)
+    uc_prompt = uc_prompt[..., None]
+    uc_prompt = rearrange(uc_prompt, 'b h w c -> b c h w')
+    uc_prompt = uc_prompt.to(device)
 
     sample_path = os.path.join(outpath, "samples")
     os.makedirs(sample_path, exist_ok=True)
@@ -129,17 +149,20 @@ if __name__ == "__main__":
         with model.ema_scope():
             uc = None
             if opt.scale != 1.0:
-                uc = model.get_learned_conditioning(opt.n_samples * [""])
+                uc = model.get_learned_conditioning(uc_prompt)
+
             for n in trange(opt.n_iter, desc="Sampling"):
-                c = model.get_learned_conditioning(opt.n_samples * [prompt])
-                shape = [4, opt.H // 8, opt.W // 8]
+                c = model.get_learned_conditioning(prompt
+                                                   # opt.n_samples * prompt
+                                                   )
+                shape = [3, opt.H // 8, opt.W // 8]
                 samples_ddim, _ = sampler.sample(S=opt.ddim_steps,
                                                  conditioning=c,
                                                  batch_size=opt.n_samples,
                                                  shape=shape,
                                                  verbose=False,
-                                                 unconditional_guidance_scale=opt.scale,
-                                                 unconditional_conditioning=uc,
+                                                 # unconditional_guidance_scale=opt.scale,
+                                                 # unconditional_conditioning=uc,
                                                  eta=opt.ddim_eta)
 
                 x_samples_ddim = model.decode_first_stage(samples_ddim)

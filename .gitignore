@@ -1,0 +1,11 @@
+/data
+data/psd
+data/psd/images
+data/psd_small
+outputs/psd-samples
+*.jpg
+*.jpeg
+/logs/
+*.ckpt
+/data/psd/images/
+/models
