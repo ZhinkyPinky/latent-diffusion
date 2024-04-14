@@ -23,51 +23,16 @@ class PSDEmbedder(nn.Module):
     def __init__(self, embed_dim, vocabulary_size=101, key='psd_label', device="cuda"):
         super().__init__()
         self.device = device
-        self.key = key
-        #self.embedding = nn.Embedding(vocabulary_size, embed_dim)
 
     def forward(self, batch, key=None):
-        # if key is None:
-        #     key = self.key
+        cond = rearrange(batch, "b h w c -> b (h w) c")
 
-        # c = batch.to(torch.long)
-
-        # c = self.embedding(c)
-        # print()
-        # print(f"embedder batch: {batch}")
-        # print(f"embedder batch shape pre rearrange: {batch.shape}")
-        # print()
-
-        # cond = rearrange(batch, "b h w c -> b (h w) c")
-        # TODO: BOOP
-        cond = rearrange(batch, "b c h w  -> b (h w) c")
-
-        # print()
-        # print(f"embedder batch shape post rearrange: {cond.shape}")
-        # print()
+        #cond = rearrange(batch, "b c h w  -> b (h w) c")
 
         return cond
 
     def encode(self, x):
         return self(x)
-
-
-class PSDEmbedderV3(nn.Module):
-    def __init__(self, embed_dim, vocabulary_size=101, key='psd_label', device="cuda"):
-        super().__init__()
-        self.device = device
-        self.key = key
-        self.embedding = nn.Embedding(vocabulary_size, embed_dim)
-
-    def forward(self, batch, key=None):
-        c = batch.to(torch.long)
-
-        c = self.embedding(c)
-        return c
-
-    def encode(self, x):
-        return self(x)
-
 
 class ClassEmbedder(nn.Module):
     def __init__(self, embed_dim, n_classes=1000, key='class'):
@@ -128,24 +93,6 @@ class BERTTokenizer(AbstractEncoder):
 
     def decode(self, text):
         return text
-
-
-if __name__ == "__main__":
-    batch = 4
-
-    prompt = ["100, 0, 75, 25, 50, 50, 0, 100", "100, 0, 75, 25, 50, 50, 0, 100"]
-    prompt = torch.tensor([[[int(value) for value in n.split(",")]] for n in prompt])
-    prompt = prompt[..., None]
-    prompt = rearrange(prompt, "b h w c -> b c h w")
-
-    # print(prompt)
-    # print(prompt.shape)
-
-    prompt = rearrange(prompt, "b h w c -> b (h w) c")
-
-    # print(prompt)
-    # print(prompt.shape)
-
 
 class BERTEmbedder(AbstractEncoder):
     """Uses the BERT tokenizr model and add some transformer encoder layers"""

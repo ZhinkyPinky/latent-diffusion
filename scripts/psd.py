@@ -37,7 +37,10 @@ if __name__ == "__main__":
         "--prompt",
         type=str,
         nargs="?",
-        default="100, 0, 100, 0, 100, 0, 100, 0",
+        default=
+        #Natural, Cultural, Cohesive, Diverse, Sheltered, Open, Serene, Social
+        #"100, 0, 100, 0, 100, 0, 100, 0",
+        "0, 100, 0, 100, 100, 0, 0, 100",
         help="the prompt to render"
     )
 
@@ -46,13 +49,13 @@ if __name__ == "__main__":
         type=str,
         nargs="?",
         help="dir to write results to",
-        default="outputs/psd-samples"
+        default="outputs/psd-samples-v4"
     )
 
     parser.add_argument(
         "--ddim_steps",
         type=int,
-        default=200,
+        default=250,
         help="number of ddim sampling steps",
     )
 
@@ -65,16 +68,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ddim_eta",
         type=float,
-        default=0.0,
+        default=1.0,
         help="ddim eta (eta=0.0 corresponds to deterministic sampling",
     )
 
-    parser.add_argument(
-        "--n_iter",
-        type=int,
-        default=1,
-        help="sample this often",
-    )
+
 
     parser.add_argument(
         "--H",
@@ -91,6 +89,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--n_iter",
+        type=int,
+        default=4,
+        help="sample this often",
+    )
+
+    parser.add_argument(
         "--n_samples",
         type=int,
         default=4,
@@ -100,19 +105,23 @@ if __name__ == "__main__":
     parser.add_argument(
         "--scale",
         type=float,
-        default=5.0,
+        default=1.0,
         help="unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))",
     )
     opt = parser.parse_args()
 
     config = OmegaConf.load(
-        "logs/2023-12-18T09-32-24_psd-ldm-vq-4/configs/2023-12-18T09-32-24-project.yaml")  # TODO: Optionally download from same location as ckpt and chnage this logic
-    model = load_model_from_config(config, "logs/2023-12-18T09-32-24_psd-ldm-vq-4/checkpoints/epoch=000380.ckpt")  # TODO: check path
+        "logs/2023-12-18T09-32-24_psd-ldm-vq-4/configs/2023-12-18T09-32-24-project.yaml"
+    )  # TODO: Optionally download from same location as ckpt and chnage this logic
+    model = load_model_from_config(config,
+                                   # "logs/2023-12-15T10-46-32_psd-ldm-vq-4/checkpoints/epoch=000200.ckpt"
+                                   "logs/2023-12-18T09-32-24_psd-ldm-vq-4/checkpoints/epoch=000380.ckpt"
+                                   )  # TODO: check path
 
-    #logs/2023-12-15T10-46-32_psd-ldm-vq-4/checkpoints/epoch=000200.ckpt
-    #logs/2023-12-15T14-25-31_psd-ldm-vq-4/checkpoints/epoch=000290.ckpt
-    #logs/2023-12-18T09-32-24_psd-ldm-vq-4/checkpoints/epoch=000380.ckpt
-    #"logs/2023-12-14T11-26-47_psd-ldm-vq-4/checkpoints/epoch=000110.ckpt"
+    # logs/2023-12-15T10-46-32_psd-ldm-vq-4/checkpoints/epoch=000200.ckpt
+    # logs/2023-12-15T14-25-31_psd-ldm-vq-4/checkpoints/epoch=000290.ckpt
+    # logs/2023-12-18T09-32-24_psd-ldm-vq-4/checkpoints/epoch=000380.ckpt
+    # "logs/2023-12-14T11-26-47_psd-ldm-vq-4/checkpoints/epoch=000110.ckpt"
     # "logs/2023-12-12T15-51-13_psd-ldm-vq-4/checkpoints/epoch=000058.ckpt"
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
